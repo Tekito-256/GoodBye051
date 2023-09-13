@@ -27,6 +27,7 @@ private:
     char *_buffer;
     u32 _bufferSize;
 
+    u32 plgLdrDataOffset = 0;
     u32 plgLdrFetchEventOffset = 0;
     u32 plgLdrReplyOffset = 0;
     u32 plgLdrInitOffset = 0;

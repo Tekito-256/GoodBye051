@@ -55,7 +55,7 @@ static const u32 plgLdrFetchEvent[] =
     0xE3530000,
     0x1AFFFFFA,
     0xE12FFF1E,
-    0x07000050
+    0x00000000 // Data offset
 };
 
 static const u32 plgLdrReply[] =
@@ -85,7 +85,7 @@ static const u32 plgLdrReply[] =
     0xE3A03001,
     0xE1CD60F0,
     0xE5950004,
-    0, // svcArbitrateAddress
+    0x00000000, // svcArbitrateAddress
     0xE3540003,
     0x1A00000D,
     0xE3E02000,
@@ -100,12 +100,12 @@ static const u32 plgLdrReply[] =
     0xE3A02001,
     0xE1CD60F0,
     0xE5950004,
-    0, // svcArbitrateAddress
+    0x00000000, // svcArbitrateAddress
     0xEAFFFFE7,
     0xE3540004,
     0x1AFFFFE5,
     0xEF000009, // svcExitThread
-    0x07000050,
+    0x00000000, // Data offset
 };
 
 static const u32 plgLdrInit[] =
@@ -115,7 +115,7 @@ static const u32 plgLdrInit[] =
     0xE59F403C,
     0xE28F103C,
     0xE1A00004,
-    0, // svcConnectToPort
+    0x00000000, // svcConnectToPort
     0xE3A03809,
     0xE5940000,
     0xE5853080,
@@ -129,7 +129,7 @@ static const u32 plgLdrInit[] =
     0xE593301C,
     0xE584300C,
     0xE8BD8070,
-    0x07000050,
+    0x00000000, // Data offset
     0x3A676C70,
     0x0072646C
 };
@@ -137,9 +137,9 @@ static const u32 plgLdrInit[] =
 static const u32 initEx[] =
 {
     0xE52DE004, // push {lr}
-    0,          // Kernel::Initialize
-    0,          // plgLdrInit
-    0,          // ConvertHeader
+    0x00000000, // Kernel::Initialize
+    0x00000000, // plgLdrInit
+    0x00000000, // ConvertHeader
     0xE49DF004, // pop {pc}
 };
 
@@ -249,6 +249,12 @@ void Converter::Write(std::fstream &out, _3gx_Header &header, const _3gx_Header_
     _in.read((char *)buffer, oldHeader.codeSize);
     out.write((const char *)buffer, oldHeader.codeSize);
 
+    // Write ext data
+    static u32 datas[4]; // plgLdrHandle, plgLdrArbiter, plgEvent, plgReply
+    plgLdrDataOffset = out.tellp();
+    out.write((const char *)datas, sizeof(datas));
+    executable.codeSize += sizeof(datas);
+
     // Write builtin function
     plgLdrFetchEventOffset = out.tellp();
     out.write((const char *)plgLdrFetchEvent, sizeof(plgLdrFetchEvent));
@@ -318,11 +324,11 @@ bool Converter::Patch(const _3gx_Header &header)
         {0xE3A03000, 0},
         {0xE28D0020, 0},
         {0xE58D5020, 0},
-        {0xEB00A2EE, 0xFFFFFF},
+        {0xEB000000, 0xFFFFFF},
         {0xE59D3020, 0},
         {0xE3530000, 0},
         {0x1A00000B, 0},
-        {0xEB009396, 0xFFFFFF},
+        {0xEB000000, 0xFFFFFF},
         {0xEAFFFFEF, 0},
     };
 
@@ -352,11 +358,11 @@ bool Converter::Patch(const _3gx_Header &header)
 
     static const PatternMask svcConnectToPortPattern =
     {
-        {0xE52D0004 , 0},
-        {0xEF00002D , 0},
-        {0xE49D3004 , 0},
-        {0xE5831000 , 0},
-        {0xE12FFF1E , 0},
+        {0xE52D0004, 0},
+        {0xEF00002D, 0},
+        {0xE49D3004, 0},
+        {0xE5831000, 0},
+        {0xE12FFF1E, 0},
     };
 
     int svcConnectToPortOffset = Search(svcConnectToPortPattern);
@@ -369,11 +375,17 @@ bool Converter::Patch(const _3gx_Header &header)
     // Config plgLdrInit
     u32 *plgLdrInitPtr = (u32 *)&_buffer[plgLdrInitOffset];
     plgLdrInitPtr[5] = CreateBranchARM(OffsetToVA(header, plgLdrInitOffset + 5 * sizeof(u32)), OffsetToVA(header, svcConnectToPortOffset), true);
+    plgLdrInitPtr[19] = OffsetToVA(header, plgLdrDataOffset);
+
+    // Config plgLdrFetchEvent
+    u32 *plgLdrFetchEventPtr = (u32 *)&_buffer[plgLdrFetchEventOffset];
+    plgLdrFetchEventPtr[8] = OffsetToVA(header, plgLdrDataOffset);
 
     // Config plgLdrReply
     u32 *plgLdrReplyPtr = (u32 *)&_buffer[plgLdrReplyOffset];
     plgLdrReplyPtr[25] = CreateBranchARM(OffsetToVA(header, plgLdrReplyOffset + 25 * sizeof(u32)), OffsetToVA(header, svcArbitrateAddressOffset), true);
     plgLdrReplyPtr[40] = CreateBranchARM(OffsetToVA(header, plgLdrReplyOffset + 40 * sizeof(u32)), OffsetToVA(header, svcArbitrateAddressOffset), true);
+    plgLdrReplyPtr[45] = OffsetToVA(header, plgLdrDataOffset);
 
     u32 *ptr = (u32 *)&_buffer[loopOffset];
 
