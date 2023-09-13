@@ -151,6 +151,7 @@ static const u32 convertHeader[] =
     0xE12FFF1E
 };
 
+// From https://gitlab.com/thepixellizeross/ctrpluginframework/-/blame/develop/Library/source/CTRPluginFrameworkImpl/System/HookManager.cpp#L61
 u32 CreateBranchARM(u32 from, u32 to, bool link)
 {
     u32 instrBase = (link ? 0xEB000000 : 0xEA000000);
@@ -159,6 +160,7 @@ u32 CreateBranchARM(u32 from, u32 to, bool link)
     return instrBase | ((off >> 2) & 0xFFFFFF);
 }
 
+// From https://github.com/citra-emu/citra/blob/f0a582b218f83f19d98c8df0e6130a32f022368b/src/core/arm/disassembler/arm_disasm.cpp#L314
 u32 GetBranchAddr(u32 addr, u32 value)
 {
     if(((value >> 26) & 0x3) != 2)
