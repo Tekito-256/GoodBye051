@@ -2,7 +2,7 @@
 
 #include "types.hpp"
 
-/* From https://gitlab.com/thepixellizeross/3gxtool */
+// From https://gitlab.com/thepixellizeross/3gxtool
 
 #define _3GX_MAGIC (0x3230303024584733) /* "3GX$0002" */
 #define _3GX_MAGIC_OLD (0x3130303024584733) /* "3GX$0001" */

@@ -1,3 +1,5 @@
+// From https://gitlab.com/thepixellizeross/3gxtool/-/blob/master/includes/types.hpp
+
 #pragma once
 
 #include <stdint.h>
